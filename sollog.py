@@ -1,6 +1,6 @@
 #Sollicitatielog
-# versie 1: Haalt info uit een Gmail map, en schrijft dit naar een CSV-bestand
-# versie 2: Zelfde info, maar naar een Excel-bestand
+# Versie 1: Haalt info uit een Gmail map, en schrijft dit naar een CSV-bestand
+# Versie 2: Zelfde info, maar naar een Excel-bestand
 
 import imaplib
 import email
