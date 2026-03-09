@@ -1,4 +1,6 @@
-#Sollicitatielog: Haalt info uit een Gmail map, en schrijft dit naar een CSV-bestand
+#Sollicitatielog
+# versie 1: Haalt info uit een Gmail map, en schrijft dit naar een CSV-bestand
+# versie 2: Zelfde info, maar naar een Excel-bestand
 
 import imaplib
 import email
@@ -8,6 +10,7 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
+from openpyxl import load_workbook, Workbook
 
 # Instelling laden via dotenv, zodat het paswoord niet openbaar wordt
 # Zeker pip install python niet vergeten
@@ -16,7 +19,7 @@ load_dotenv()
 GMAIL_ADRES    = os.getenv("GMAIL_ADRES")
 APP_WACHTWOORD = os.getenv("APP_WACHTWOORD")
 IMAP_MAP       = os.getenv("IMAP_MAP")
-CSV_PAD        = os.getenv("CSV_PAD")
+XLS_PAD        = os.getenv("XLSPAD")
 # ────────────────────────────────────────────────────────────
 
 def decodeer_header(waarde):
@@ -82,35 +85,43 @@ def haal_mails_op():
     mail.logout()
     return resultaten
 
-def sla_op_als_csv(mails):
-    os.makedirs(os.path.dirname(CSV_PAD), exist_ok=True)
+def sla_op_als_excel(mails):
+    os.makedirs(os.path.dirname(XLS_PAD), exist_ok=True)
 
+    # Bestand aanmaken als het nog niet bestaat
+    if not os.path.exists(XLS_PAD):
+        wb = Workbook()
+        ws = wb.active
+        ws.append(["Datum", "Aan", "Bedrijf", "Onderwerp"])
+        wb.save(XLS_PAD)
+
+    wb = load_workbook(XLS_PAD)
+    ws = wb.active
+
+    # Bestaande rijen inlezen om duplicaten te vermijden
     bestaande = set()
-    if os.path.exists(CSV_PAD):
-        with open(CSV_PAD, newline="", encoding="utf-8-sig") as f:
-            lezer = csv.DictReader(f)
-            for rij in lezer:
-                bestaande.add((rij["Datum"], rij["Onderwerp"]))
+    for rij in ws.iter_rows(min_row=2, values_only=True):
+        bestaande.add((rij[0], rij[3]))  # Datum + Onderwerp
 
     nieuw = [m for m in mails if (m["Datum"], m["Onderwerp"]) not in bestaande]
 
     if not nieuw:
-        print("ℹ️  Geen nieuwe mails om toe te voegen aan de log.")
+        print("ℹ️  Geen nieuwe mails om toe te voegen.")
         return
 
-    schrijf_header = not os.path.exists(CSV_PAD)
-    with open(CSV_PAD, "a", newline="", encoding="utf-8-sig") as f:
-        velden = ["Datum", "Aan", "Bedrijf", "Onderwerp"]
-        schrijver = csv.DictWriter(f, fieldnames=velden)
-        if schrijf_header:
-            schrijver.writeheader()
-        schrijver.writerows(nieuw)
+    for m in nieuw:
+        ws.append([m["Datum"], m["Aan"], m["Bedrijf"], m["Onderwerp"]])
 
-    print(f"✅ {len(nieuw)} nieuwe sollicitatie(s) toegevoegd aan {CSV_PAD}")
+    wb.save(XLS_PAD)
+    print(f"✅ {len(nieuw)} nieuwe sollicitatie(s) toegevoegd aan {XLS_PAD}")
 
 if __name__ == "__main__":
     mails = haal_mails_op()
-    if mails:
-        sla_op_als_csv(mails)
+    try:
+        if mails:
+            sla_op_als_excel(mails)
+    except Exception as e:
+        print(f"❌ Fout: {e}")
+#Leesbaar maken van fouten        
     print("\nKlaar! Druk op Enter om af te sluiten.")
     input()
