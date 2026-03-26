@@ -1,11 +1,8 @@
 #Sollicitatielog
-# versie 1: Haalt info uit een Gmail map, en schrijft dit naar een CSV-bestand
-# versie 2: Zelfde info, maar naar een Excel-bestand
 
 import imaplib
 import email
 from email.header import decode_header
-import csv
 import os
 from datetime import datetime
 from dotenv import load_dotenv
@@ -22,7 +19,7 @@ IMAP_MAP       = os.getenv("IMAP_MAP")
 XLS_PAD        = os.getenv("XLSPAD")
 # ────────────────────────────────────────────────────────────
 
-def decodeer_header(waarde):
+def def decodeer_header(waarde: str | None) -> str:
     if not waarde:
         return ""
     delen = decode_header(waarde)
@@ -34,7 +31,7 @@ def decodeer_header(waarde):
             resultaat.append(deel)
     return " ".join(resultaat)
 
-def haal_mails_op():
+def haal_mails_op() -> list[dict]:
     print("Verbinding maken met Gmail...")
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
     mail.login(GMAIL_ADRES, APP_WACHTWOORD)
@@ -85,10 +82,10 @@ def haal_mails_op():
     mail.logout()
     return resultaten
 
-def sla_op_als_excel(mails):
+def sla_op_als_excel(mails: list[dict]) -> None:
     os.makedirs(os.path.dirname(XLS_PAD), exist_ok=True)
 
-    # Bestand aanmaken als het nog niet bestaat
+    # Eerste keer opstarten: headers alvast klaarzetten zodat openpyxl structuur kent
     if not os.path.exists(XLS_PAD):
         wb = Workbook()
         ws = wb.active
@@ -98,7 +95,7 @@ def sla_op_als_excel(mails):
     wb = load_workbook(XLS_PAD)
     ws = wb.active
 
-    # Bestaande rijen inlezen om duplicaten te vermijden
+    # Set is sneller dan lijst voor opzoeken — bij grote logs merk je het verschil
     bestaande = set()
     for rij in ws.iter_rows(min_row=2, values_only=True):
         bestaande.add((rij[0], rij[3]))  # Datum + Onderwerp
