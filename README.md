@@ -61,3 +61,6 @@ DATA_MAP=C:\Pad\Naar\Uitvoermap
 ## Ondersteunde IMAP Servers
 
 Het script werkt met alle IMAP-compatibele mailproviders, zoals Gmail, Outlook, Yahoo, etc. Het is getest met Gmail, maar zou moeten werken met elke server die IMAP ondersteunt. Controleer de IMAP-instellingen van je provider voor het juiste serveradres en poort.
+
+## Notities
+Ontwikkeld met in VSCode met behulp van Claude Code.
